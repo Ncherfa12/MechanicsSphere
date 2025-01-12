@@ -25,7 +25,7 @@ void solve_problem(std::vector<double>& x_vals, std::vector<double>& y_vals,
         x_vals.push_back(x);
         y_vals.push_back(y);
 
-        // Compute y'(x) and update y using Euler's method
+        // Compute y'(x), update y
         double dy = derivative_func(y, c) * step;
         y += dy;
         x += step;
@@ -33,7 +33,6 @@ void solve_problem(std::vector<double>& x_vals, std::vector<double>& y_vals,
 }
 
 int main(int argc, char* argv[]) {
-    // Check command-line arguments
     if (argc < 2) {
         std::cerr << "Usage: ./numerical_solver <problem_type>" << std::endl;
         std::cerr << "problem_type: shortest_path or broken_extremal" << std::endl;
@@ -44,7 +43,7 @@ int main(int argc, char* argv[]) {
     double c, x0, y0, x_end, step;
     std::vector<double> x_vals, y_vals;
 
-    // Problem-specific setup
+    // Problem-specific ICs etc
     if (problem_type == "shortest_path") {
         std::cout << "Solving Shortest Path Problem..." << std::endl;
         c = 0;            // Constant for shortest path (can be ignored)
@@ -66,10 +65,10 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Write results to a CSV file
+    // Write as CSV
     std::string output_file = "src/" + problem_type + "_solution.csv";
     std::ofstream output(output_file);
-    output << "x,y\n";  // Add headers for clarity
+    output << "x,y\n";  // for clarity
     for (size_t i = 0; i < x_vals.size(); ++i) {
         output << x_vals[i] << "," << y_vals[i] << "\n";
     }
@@ -77,5 +76,5 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Solution written to " << output_file << std::endl;
 
-    return 0;  // Add return statement to end the program
+    return 0;  // End
 }
