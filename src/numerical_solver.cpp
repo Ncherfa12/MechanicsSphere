@@ -1,62 +1,81 @@
 #include <iostream>
 #include <fstream>
-#include <vector>
 #include <cmath>
+#include <vector>
+#include <string>
 
-// Define the system of ODEs (e.g., Shortest Path Problem)
-void shortest_path_ode(double x, const std::vector<double>& y, std::vector<double>& dydx) {
-    dydx[0] = y[1];  // dy/dx = y'
-    dydx[1] = 0.0;   // d^2y/dx^2 = 0 (Euler-Lagrange for shortest path)
+// Function to compute y'(x) for the Shortest Path Problem
+double shortest_path_derivative(double y, double c) {
+    return sqrt(fabs(1 + c));
 }
 
-// Numerical solver using the Euler method
-void euler_solver(double x0, double x1, double h, const std::vector<double>& y0, 
-                  void (*ode)(double, const std::vector<double>&, std::vector<double>&), 
-                  const std::string& output_file) {
+// Function to compute y'(x) for the Broken Extremal Problem
+double broken_extremal_derivative(double y, double c) {
+    return sqrt(fabs(y * y - c));
+}
+
+// General solver function
+void solve_problem(std::vector<double>& x_vals, std::vector<double>& y_vals,
+                   double (*derivative_func)(double, double),
+                   double x0, double y0, double x_end, double step, double c) {
     double x = x0;
-    std::vector<double> y = y0;
-    std::vector<double> dydx(y.size());
+    double y = y0;
 
-    // Open output file
-    std::ofstream file(output_file);
-    file << "x,y\n";
+    while (x < x_end) {
+        x_vals.push_back(x);
+        y_vals.push_back(y);
 
-    // Write initial conditions
-    file << x << "," << y[0] << "\n";
+        // Compute y'(x) and update y using Euler's method
+        double dy = derivative_func(y, c) * step;
+        y += dy;
+        x += step;
+    }
+}
 
-    // Euler integration loop
-    while (x <= x1) {
-        // Compute derivatives
-        ode(x, y, dydx);
-
-        // Update y values using Euler's method
-        for (size_t i = 0; i < y.size(); ++i) {
-            y[i] += h * dydx[i];
-        }
-
-        // Update x
-        x += h;
-
-        // Write to file
-        file << x << "," << y[0] << "\n";
+int main(int argc, char* argv[]) {
+    // Check command-line arguments
+    if (argc < 2) {
+        std::cerr << "Usage: ./numerical_solver <problem_type>" << std::endl;
+        std::cerr << "problem_type: shortest_path or broken_extremal" << std::endl;
+        return 1;
     }
 
-    file.close();
-    std::cout << "Solution saved to " << output_file << std::endl;
-}
+    std::string problem_type = argv[1];
+    double c, x0, y0, x_end, step;
+    std::vector<double> x_vals, y_vals;
 
-int main() {
-    // Define problem parameters
-    double x0 = 0.0;        // Start of the interval
-    double x1 = 1.0;        // End of the interval
-    double h = 0.01;        // Step size
-    std::vector<double> y0 = {0.0, 1.0}; // Initial conditions: y(0) = 0, y'(0) = 1
+    // Problem-specific setup
+    if (problem_type == "shortest_path") {
+        std::cout << "Solving Shortest Path Problem..." << std::endl;
+        c = 0;            // Constant for shortest path (can be ignored)
+        x0 = 0.0;         // Starting x
+        y0 = 0.0;         // Starting y
+        x_end = 1.0;      // Ending x
+        step = 0.01;      // Step size
+        solve_problem(x_vals, y_vals, shortest_path_derivative, x0, y0, x_end, step, c);
+    } else if (problem_type == "broken_extremal") {
+        std::cout << "Solving Broken Extremal Problem..." << std::endl;
+        c = 0.5;          // Example constant for y^2 - c
+        x0 = 0.0;         // Starting x
+        y0 = 0.0;         // Starting y
+        x_end = 1.0;      // Ending x
+        step = 0.01;      // Step size
+        solve_problem(x_vals, y_vals, broken_extremal_derivative, x0, y0, x_end, step, c);
+    } else {
+        std::cerr << "Unknown problem type: " << problem_type << std::endl;
+        return 1;
+    }
 
-    // Output file
-    std::string output_file = "shortest_path_solution.csv";
+    // Write results to a CSV file
+    std::string output_file = "src/" + problem_type + "_solution.csv";
+    std::ofstream output(output_file);
+    output << "x,y\n";  // Add headers for clarity
+    for (size_t i = 0; i < x_vals.size(); ++i) {
+        output << x_vals[i] << "," << y_vals[i] << "\n";
+    }
+    output.close();
 
-    // Solve the problem
-    euler_solver(x0, x1, h, y0, shortest_path_ode, output_file);
+    std::cout << "Solution written to " << output_file << std::endl;
 
-    return 0;
+    return 0;  // Add return statement to end the program
 }
